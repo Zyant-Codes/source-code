@@ -1821,6 +1821,7 @@ public class Items {
             .component(DataComponents.TOOL, TridentItem.createToolProperties())
             .enchantable(1)
     );
+    public static final Item SPEAR = registerItem("spear", p_359432_ -> new SwordItem(ToolMaterial.IRON, 3.0F, -2.4F, p_359432_));
     public static final Item NAUTILUS_SHELL = registerItem("nautilus_shell", new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final Item HEART_OF_THE_SEA = registerItem("heart_of_the_sea", new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final Item CROSSBOW = registerItem(

@@ -197,6 +197,8 @@ public abstract class Player extends LivingEntity {
     @Nullable
     public Entity currentExplosionCause;
     private boolean ignoreFallDamageFromCurrentImpulse;
+    private long lastSpearUse = 0L;
+    private static final long SPEAR_ATTACK_COOLDOWN_MS = 1500L;
     private int currentImpulseContextResetGraceTime;
 
     public Player(Level p_250508_, BlockPos p_250289_, float p_251702_, GameProfile p_252153_) {
@@ -1133,6 +1135,19 @@ public abstract class Player extends LivingEntity {
             if (!p_36347_.skipAttackInteraction(this)) {
                 float f = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
                 ItemStack itemstack = this.getWeaponItem();
+                if (itemstack.is(Items.SPEAR)) {
+                    long now = System.currentTimeMillis();
+                    if (now - this.lastSpearUse >= SPEAR_ATTACK_COOLDOWN_MS) {
+                        this.lastSpearUse = now;
+                        Vec3 delta = this.getDeltaMovement();
+                        float yaw = this.getYRot() * ((float)Math.PI / 180.0F);
+                        double forward = 0.85;
+                        double motionX = delta.x * 0.6 + (-Mth.sin(yaw) * forward);
+                        double motionZ = delta.z * 0.6 + (Mth.cos(yaw) * forward);
+                        double motionY = this.onGround() ? 0.08 : delta.y;
+                        this.setDeltaMovement(motionX * 0.95, motionY, motionZ * 0.95);
+                    }
+                }
                 DamageSource damagesource = Optional.ofNullable(itemstack.getItem().getDamageSource(this)).orElse(this.damageSources().playerAttack(this));
                 float f1 = this.getEnchantedDamage(p_36347_, f, damagesource) - f;
                 float f2 = this.getAttackStrengthScale(0.5F);

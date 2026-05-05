@@ -686,6 +686,7 @@ enchantment.damage.undead=Smite
 enchantment.digging=Efficiency
 enchantment.durability=Unbreaking
 enchantment.fire=Fire Aspect
+enchantment.lunge=Lunge
 enchantment.fishingSpeed=Lure
 enchantment.knockback=Knockback
 enchantment.level.1=I

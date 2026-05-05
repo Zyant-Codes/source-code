@@ -114,6 +114,7 @@ public class Enchantments {
     public static final ResourceKey<Enchantment> MULTISHOT = key("multishot");
     public static final ResourceKey<Enchantment> QUICK_CHARGE = key("quick_charge");
     public static final ResourceKey<Enchantment> PIERCING = key("piercing");
+    public static final ResourceKey<Enchantment> LUNGE = key("lunge");
     public static final ResourceKey<Enchantment> DENSITY = key("density");
     public static final ResourceKey<Enchantment> BREACH = key("breach");
     public static final ResourceKey<Enchantment> WIND_BURST = key("wind_burst");
@@ -931,6 +932,21 @@ public class Enchantments {
                     )
                 )
                 .withEffect(EnchantmentEffectComponents.TRIDENT_RETURN_ACCELERATION, new AddValue(LevelBasedValue.perLevel(1.0F)))
+        );
+        register(
+            p_343249_,
+            LUNGE,
+            Enchantment.enchantment(
+                    Enchantment.definition(
+                        holdergetter2.getOrThrow(ItemTags.SWORD_ENCHANTABLE),
+                        5,
+                        3,
+                        Enchantment.dynamicCost(1, 11),
+                        Enchantment.dynamicCost(12, 11),
+                        1,
+                        EquipmentSlotGroup.MAINHAND
+                    )
+                )
         );
         register(
             p_343249_,

@@ -93,11 +93,14 @@ import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ProjectileWeaponItem;
+import net.minecraft.world.item.SpearItem;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.equipment.Equippable;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.BaseCommandBlock;
 import net.minecraft.world.level.GameRules;
@@ -197,8 +200,8 @@ public abstract class Player extends LivingEntity {
     @Nullable
     public Entity currentExplosionCause;
     private boolean ignoreFallDamageFromCurrentImpulse;
-    private long lastSpearUse = 0L;
-    private static final long SPEAR_ATTACK_COOLDOWN_MS = 1500L;
+    private int lastSpearUse = 0;
+    private static final int SPEAR_ATTACK_COOLDOWN_TICKS = 30;
     private int currentImpulseContextResetGraceTime;
 
     public Player(Level p_250508_, BlockPos p_250289_, float p_251702_, GameProfile p_252153_) {
@@ -1110,6 +1113,17 @@ public abstract class Player extends LivingEntity {
         }
     }
 
+    private static int getSpearLungeLevel(ItemStack itemstack, Level level) {
+        if (!itemstack.is(Items.SPEAR)) {
+            return 0;
+        }
+
+        return EnchantmentHelper.getItemEnchantmentLevel(
+            level.registryAccess().registryOrThrow(Registries.ENCHANTMENT).getHolderOrThrow(Enchantments.LUNGE),
+            itemstack
+        );
+    }
+
     private boolean isAboveGround(float p_328745_) {
         return this.onGround() || this.fallDistance < p_328745_ && !this.canFallAtLeast(0.0, 0.0, p_328745_ - this.fallDistance);
     }
@@ -1136,16 +1150,19 @@ public abstract class Player extends LivingEntity {
                 float f = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
                 ItemStack itemstack = this.getWeaponItem();
                 if (itemstack.is(Items.SPEAR)) {
-                    long now = System.currentTimeMillis();
-                    if (now - this.lastSpearUse >= SPEAR_ATTACK_COOLDOWN_MS) {
-                        this.lastSpearUse = now;
-                        Vec3 delta = this.getDeltaMovement();
+                    int l = getSpearLungeLevel(itemstack, this.level());
+                    if (l > 0 && this.tickCount - this.lastSpearUse >= SPEAR_ATTACK_COOLDOWN_TICKS) {
+                        this.lastSpearUse = this.tickCount;
                         float yaw = this.getYRot() * ((float)Math.PI / 180.0F);
-                        double forward = 0.85;
-                        double motionX = delta.x * 0.6 + (-Mth.sin(yaw) * forward);
-                        double motionZ = delta.z * 0.6 + (Mth.cos(yaw) * forward);
-                        double motionY = this.onGround() ? 0.08 : delta.y;
-                        this.setDeltaMovement(motionX * 0.95, motionY, motionZ * 0.95);
+                        double fwd = (l == 1 ? 0.75 : l == 2 ? 0.95 : 1.2) * (this.isSprinting() ? 1.2 : 1.0);
+                        double dx = -Mth.sin(yaw);
+                        double dz = Mth.cos(yaw);
+                        double len = Math.sqrt(dx * dx + dz * dz);
+                        dx /= len;
+                        dz /= len;
+                        double dy = this.onGround() ? (0.22 + l * 0.06) : this.getDeltaMovement().y + 0.05;
+                        this.setDeltaMovement(dx * fwd, dy, dz * fwd);
+                        SpearItem.spearHit(this, dx, dz, 3.0 + l * 0.75, 5.0F + l);
                     }
                 }
                 DamageSource damagesource = Optional.ofNullable(itemstack.getItem().getDamageSource(this)).orElse(this.damageSources().playerAttack(this));

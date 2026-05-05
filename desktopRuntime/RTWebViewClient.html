@@ -25,10 +25,17 @@ POSSIBILITY OF SUCH DAMAGE.
 			"use strict";
 			(function() {
 				var webSocketURI = "${client_websocket_uri}";
+				var gameFallbackURL = "../javascript/index.html";
 				if(webSocketURI === ("$" + "{client_websocket_uri}")) {
-					alert("Don't open this file in your browser");
 					window.addEventListener("load", function() {
-						document.body.innerHTML = "<p style=\"text-align:center;\">cunt</p>";
+						var body = document.body;
+						body.style.margin = "0";
+						body.style.fontFamily = "sans-serif";
+						body.style.display = "flex";
+						body.style.alignItems = "center";
+						body.style.justifyContent = "center";
+						body.style.height = "100vh";
+						body.innerHTML = "<div style='text-align:center;max-width:650px;padding:24px;'><h1>Direct Game Launch</h1><p>The WebView runtime is not available for this file. Click below to open the game directly.</p><p><a href='" + gameFallbackURL + "' style='font-size:1.2em;color:#0078D7;text-decoration:none;'>Open EaglercraftX Game</a></p><p style='margin-top:24px;color:#666;'>If this file is being served by the runtime, the game should start automatically once the runtime launches the WebView.</p></div>";
 					});
 					return;
 				}

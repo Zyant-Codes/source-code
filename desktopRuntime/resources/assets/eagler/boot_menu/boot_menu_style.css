@@ -59,6 +59,14 @@
 	color: #CCCCCC;
 	white-space: pre-wrap;
 }
+.{% global `root_class_gen` %} ._eaglercraftX_boot_menu_header_link {
+	text-align: center;
+	padding: 8px 0px 8px 0px;
+}
+.{% global `root_class_gen` %} ._eaglercraftX_boot_menu_header_link a {
+	color: #66d9ef;
+	text-decoration: underline;
+}
 .{% global `root_class_gen` %} ._eaglercraftX_boot_menu_content {
 	flex: 1 1 auto;
 	position: relative;

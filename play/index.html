@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html style="width:100%;height:100%;background-color:black;">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+<meta name="description" content="EaglercraftX 1.21 WASM-GC — optimized fast-loading launcher" />
+<title>EaglercraftX 1.21 — Fast Launcher</title>
+<link type="image/png" rel="shortcut icon" href="favicon.png" />
+<script type="text/javascript">
+"use strict";
+var relayId = Math.floor(Math.random() * 3);
+
+// %%%%%%%%% launch options %%%%%%%%%%%%
+window.eaglercraftXOpts = {
+	container: "game_frame",
+	worldsDB: "worlds",
+	relays: [
+		{ addr: "wss://relay.deev.is/", comment: "lax1dude relay #1", primary: relayId == 0 },
+		{ addr: "wss://relay.lax1dude.net/", comment: "lax1dude relay #2", primary: relayId == 1 },
+		{ addr: "wss://relay.shhnowisnottheti.me/", comment: "ayunami relay #1", primary: relayId == 2 }
+	]
+};
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+// Game package, split into chunks downloaded in PARALLEL (starts before page even finishes parsing)
+var EPW_PARTS = 9, EPW_SIZE = 36623620;
+window.__epwFetches = [];
+for (var __i = 0; __i < EPW_PARTS; ++__i) {
+	window.__epwFetches.push(fetch("client.epw.part" + __i, { cache: "force-cache" }));
+}
+</script>
+<script type="text/javascript" src="bootstrap.js"></script>
+<style>
+#fastload { margin:0; width:100%; height:100%; font-family:sans-serif; display:flex; align-items:center; justify-content:center; background-color:#121212; }
+#fastload .inner { text-align:center; color:#fff; width:min(480px, 82vw); }
+#fastload h1 { font-size:1.6rem; margin:0 0 6px 0; }
+#fastload h1 span { color:#55FF55; }
+#fastload p { color:#aaa; margin:4px 0 14px 0; font-size:.9rem; }
+#loadbarOuter { border:2px solid #fff; height:14px; padding:1px; }
+#loadbar { background-color:#55FF55; width:0%; height:100%; transition:width .15s linear; }
+#loadstat { color:#888; font-size:.8rem; margin-top:8px; }
+</style>
+</head>
+<body style="margin:0px;width:100%;height:100%;overflow:hidden;background-color:#121212;" id="game_frame">
+	<div id="fastload">
+		<div class="inner">
+			<h1>Launching <span>Eaglercraft</span></h1>
+			<p>No countdown. No waiting. Cached after first load.</p>
+			<div id="loadbarOuter"><div id="loadbar"></div></div>
+			<div id="loadstat">Starting download&hellip;</div>
+		</div>
+	</div>
+<script type="text/javascript">
+"use strict";
+(function() {
+	// Cache everything for instant, offline-capable repeat visits
+	if ("serviceWorker" in navigator) {
+		try { navigator.serviceWorker.register("sw.js"); } catch (e) {}
+	}
+
+	var bar = document.getElementById("loadbar");
+	var stat = document.getElementById("loadstat");
+	function mb(n) { return (n / 1048576).toFixed(1); }
+
+	function launch(assetsURI) {
+		window.eaglercraftXOpts.assetsURI = assetsURI;
+		var fl = document.getElementById("fastload");
+		if (fl && fl.parentNode) fl.parentNode.removeChild(fl);
+		document.body.style.backgroundColor = "black";
+		window.main();
+	}
+
+	function fail(msg) {
+		stat.innerText = "Download failed (" + msg + "). Refresh to retry.";
+		bar.style.backgroundColor = "#FF5555";
+		bar.style.width = "100%";
+	}
+
+	function start() {
+		var received = 0;
+		function track(res) {
+			if (!res.ok) throw new Error("HTTP " + res.status);
+			if (!res.body || !window.ReadableStream) return res.arrayBuffer().then(function(b) {
+				received += b.byteLength; return b;
+			});
+			var reader = res.body.getReader();
+			var chunks = [];
+			function pump() {
+				return reader.read().then(function(r) {
+					if (r.done) {
+						var out = new Blob(chunks);
+						return out;
+					}
+					chunks.push(r.value);
+					received += r.value.length;
+					var pct = Math.min(100, (received / EPW_SIZE) * 100);
+					bar.style.width = pct + "%";
+					stat.innerText = mb(received) + " / " + mb(EPW_SIZE) + " MB";
+					return pump();
+				});
+			}
+			return pump();
+		}
+		Promise.all(window.__epwFetches.map(function(p) { return p.then(track); }))
+			.then(function(bufs) {
+				bar.style.width = "100%";
+				stat.innerText = "Starting game\u2026";
+				var blob = new Blob(bufs, { type: "application/octet-stream" });
+				launch(URL.createObjectURL(blob));
+			})
+			.catch(function(e) { fail(e && e.message ? e.message : "network error"); });
+	}
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", start);
+	} else {
+		start();
+	}
+})();
+</script>
+</body>
+</html>
